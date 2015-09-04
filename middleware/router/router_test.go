@@ -1,8 +1,8 @@
-package middleware
+package router
 
 import (
-	"testing"
 	"net/http"
+	"testing"
 
 	"github.com/erichnascimento/rocket"
 
@@ -10,10 +10,10 @@ import (
 )
 
 func TestGetPath(t *testing.T) {
-	paths := map[string] string{
-		"/user": "/user",
-		"/user?": "/user",
-		"/user?p=123": "/user",
+	paths := map[string]string{
+		"/user":          "/user",
+		"/user?":         "/user",
+		"/user?p=123":    "/user",
 		"/user#app/list": "/user",
 	}
 
@@ -86,11 +86,11 @@ func TestRouterGet(t *testing.T) {
 	router := NewRouter()
 
 	//handlers["/"] = false
-	router.Add("GET", "/", func (ctx *rocket.Context)  {handlers["/"]++})
-	router.Add("GET", "/users", func (ctx *rocket.Context)  {handlers["/users"]++})
-	router.Add("GET", "/users/:userId", func (ctx *rocket.Context)  {handlers["/users/:userId"]++})
-	router.Add("GET", "/users/:userId/sales", func (ctx *rocket.Context)  {handlers["/users/:userId/sales"]++})
-	router.Add("GET", "/users/:userId/sales/:saleId", func (ctx *rocket.Context)  {handlers["/users/:userId/sales/:saleId"]++})
+	router.Add("GET", "/", func(ctx *Context) { handlers["/"]++ })
+	router.Add("GET", "/users", func(ctx *Context) { handlers["/users"]++ })
+	router.Add("GET", "/users/:userId", func(ctx *Context) { handlers["/users/:userId"]++ })
+	router.Add("GET", "/users/:userId/sales", func(ctx *Context) { handlers["/users/:userId/sales"]++ })
+	router.Add("GET", "/users/:userId/sales/:saleId", func(ctx *Context) { handlers["/users/:userId/sales/:saleId"]++ })
 
 	router.handle(createContext("GET", ""))
 	router.handle(createContext("GET", "/users"))
@@ -107,4 +107,26 @@ func TestRouterGet(t *testing.T) {
 	assert.Equal(t, 1, handlers["/users/:userId/sales"])
 	assert.Equal(t, 1, handlers["/users/:userId/sales/:saleId"])
 
+}
+
+func TestContext(t *testing.T) {
+	router := NewRouter()
+
+	// Unexistent param should return empty string
+	router.Add("GET", "/", func(ctx *Context) {
+		assert.Equal(t, "", ctx.GetParam("userId"))
+	})
+
+	router.Add("GET", "/users/:userId", func(ctx *Context) {
+		assert.Equal(t, "1", ctx.GetParam("userId"))
+	})
+
+	router.Add("GET", "/users/:userId/sales/:saleId", func(ctx *Context) {
+		assert.Equal(t, "1", ctx.GetParam("userId"))
+		assert.Equal(t, "2", ctx.GetParam("saleId"))
+	})
+
+	router.handle(createContext("GET", "/"))
+	router.handle(createContext("GET", "/users/1"))
+	router.handle(createContext("GET", "/users/1/sales/2"))
 }

@@ -1,29 +1,50 @@
-package middleware
+package router
 
 import (
 	"strings"
+
 	"github.com/erichnascimento/rocket"
+	"github.com/erichnascimento/rocket/middleware"
 	//"log"
 )
+
+// Context type
+type Context struct {
+	*rocket.Context
+	route   *Route
+	request *Request
+}
+
+// GetParam return a param value
+func (c *Context) GetParam(name string) string {
+	for k, v := range c.route.params {
+		if v == name {
+			return c.request.params[k]
+		}
+	}
+	return ""
+}
+
+type HandleFunc func(ctx *Context)
 
 type routeEntries struct {
 	get []*Route
 }
 
 type Router struct {
-	next HandleFunc
-	routes *routeEntries
+	next      middleware.HandleFunc
+	routes    *routeEntries
 	resources map[string]bool
 }
 
 func NewRouter() *Router {
 	return &Router{
-		routes: &routeEntries{make([]*Route, 0)},
+		routes:    &routeEntries{make([]*Route, 0)},
 		resources: map[string]bool{},
 	}
 }
 
-func (this *Router) CreateHandle(next HandleFunc) HandleFunc {
+func (this *Router) CreateHandle(next middleware.HandleFunc) middleware.HandleFunc {
 	this.next = next
 	return this.handle
 }
@@ -40,9 +61,9 @@ func (this *Router) handle(ctx *rocket.Context) {
 	for _, route := range routes {
 		if route.compiledRoute == req.compiledPath {
 			if route.handler != nil {
-				route.handler(ctx)
+				route.handler(&Context{ctx, route, req})
 			}
-			break;
+			break
 		}
 	}
 
@@ -75,17 +96,17 @@ func explodePathParts(path string) []string {
 }
 
 type Route struct {
-	route string
+	route         string
 	compiledRoute string
-	resources map[string]bool
-	params []string
-	handler HandleFunc
+	resources     map[string]bool
+	params        []string
+	handler       HandleFunc
 }
 
 func (r *Route) CompileRoute(route string) error {
 	r.compiledRoute = "."
 
-	if (route == "") {
+	if route == "" {
 		return nil
 	}
 
@@ -118,10 +139,10 @@ func newRoute(route string, handler HandleFunc) (error, *Route) {
 }
 
 type Request struct {
-	url string
-	resources map[string]bool
+	url          string
+	resources    map[string]bool
 	compiledPath string
-	params []string
+	params       []string
 }
 
 func (r *Request) ParseURL(url string) error {

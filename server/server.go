@@ -3,19 +3,19 @@ package server
 import (
 	"net/http"
 
-	"github.com/erichnascimento/rocket/middleware"
 	"github.com/erichnascimento/rocket"
+	"github.com/erichnascimento/rocket/middleware"
 )
 
 func createFinalHandler() middleware.HandleFunc {
-	return func (ctx *rocket.Context) {
+	return func(ctx *rocket.Context) {
 		// nope
 	}
 }
 
 type Server struct {
-	server *http.Server
-	handler middleware.HandleFunc
+	server      *http.Server
+	handler     middleware.HandleFunc
 	middlewares []middleware.Middleware
 }
 
@@ -25,7 +25,7 @@ func New(addr string) *Server {
 	}
 
 	s.server = &http.Server{
-		Addr: addr,
+		Addr:    addr,
 		Handler: s,
 	}
 
@@ -59,4 +59,3 @@ func (s *Server) Stop() {
 	}
 	s.dispatcher.w.Wait()*/
 }
-

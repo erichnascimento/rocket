@@ -9,7 +9,7 @@ type Context struct {
 	http.ResponseWriter
 	Request *http.Request
 	written int
-	status int
+	status  int
 }
 
 // Override to capture status
