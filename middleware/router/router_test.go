@@ -130,3 +130,147 @@ func TestContext(t *testing.T) {
 	router.handle(createContext("GET", "/users/1"))
 	router.handle(createContext("GET", "/users/1/sales/2"))
 }
+
+func TestRouterPost(t *testing.T) {
+	handlers := map[string]int{}
+	router := NewRouter()
+
+	//handlers["/"] = false
+	router.Add("POST", "/", func(ctx *Context) { handlers["/"]++ })
+	router.Add("POST", "/users", func(ctx *Context) { handlers["/users"]++ })
+	router.Add("POST", "/users/:userId", func(ctx *Context) { handlers["/users/:userId"]++ })
+	router.Add("POST", "/users/:userId/sales", func(ctx *Context) { handlers["/users/:userId/sales"]++ })
+	router.Add("POST", "/users/:userId/sales/:saleId", func(ctx *Context) { handlers["/users/:userId/sales/:saleId"]++ })
+
+	router.handle(createContext("POST", "/"))
+	router.handle(createContext("POST", "/users"))
+	router.handle(createContext("POST", "/users/1"))
+	router.handle(createContext("POST", "/users/1/sales"))
+	router.handle(createContext("POST", "/users/1/sales/123"))
+
+	assert.Equal(t, 1, handlers["/"])
+	assert.Equal(t, 1, handlers["/users"])
+	assert.Equal(t, 1, handlers["/users/:userId"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales/:saleId"])
+}
+
+func TestRouterPut(t *testing.T) {
+	handlers := map[string]int{}
+	router := NewRouter()
+
+	//handlers["/"] = false
+	router.Add("PUT", "/", func(ctx *Context) { handlers["/"]++ })
+	router.Add("PUT", "/users", func(ctx *Context) { handlers["/users"]++ })
+	router.Add("PUT", "/users/:userId", func(ctx *Context) { handlers["/users/:userId"]++ })
+	router.Add("PUT", "/users/:userId/sales", func(ctx *Context) { handlers["/users/:userId/sales"]++ })
+	router.Add("PUT", "/users/:userId/sales/:saleId", func(ctx *Context) { handlers["/users/:userId/sales/:saleId"]++ })
+
+	router.handle(createContext("PUT", "/"))
+	router.handle(createContext("PUT", "/users"))
+	router.handle(createContext("PUT", "/users/1"))
+	router.handle(createContext("PUT", "/users/1/sales"))
+	router.handle(createContext("PUT", "/users/1/sales/123"))
+
+	assert.Equal(t, 1, handlers["/"])
+	assert.Equal(t, 1, handlers["/users"])
+	assert.Equal(t, 1, handlers["/users/:userId"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales/:saleId"])
+}
+
+func TestRouterDelete(t *testing.T) {
+	handlers := map[string]int{}
+	router := NewRouter()
+
+	//handlers["/"] = false
+	router.Add("DELETE", "/", func(ctx *Context) { handlers["/"]++ })
+	router.Add("DELETE", "/users", func(ctx *Context) { handlers["/users"]++ })
+	router.Add("DELETE", "/users/:userId", func(ctx *Context) { handlers["/users/:userId"]++ })
+	router.Add("DELETE", "/users/:userId/sales", func(ctx *Context) { handlers["/users/:userId/sales"]++ })
+	router.Add("DELETE", "/users/:userId/sales/:saleId", func(ctx *Context) { handlers["/users/:userId/sales/:saleId"]++ })
+
+	router.handle(createContext("DELETE", "/"))
+	router.handle(createContext("DELETE", "/users"))
+	router.handle(createContext("DELETE", "/users/1"))
+	router.handle(createContext("DELETE", "/users/1/sales"))
+	router.handle(createContext("DELETE", "/users/1/sales/123"))
+
+	assert.Equal(t, 1, handlers["/"])
+	assert.Equal(t, 1, handlers["/users"])
+	assert.Equal(t, 1, handlers["/users/:userId"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales/:saleId"])
+}
+
+func TestRouterPatch(t *testing.T) {
+	handlers := map[string]int{}
+	router := NewRouter()
+
+	//handlers["/"] = false
+	router.Add("PATCH", "/", func(ctx *Context) { handlers["/"]++ })
+	router.Add("PATCH", "/users", func(ctx *Context) { handlers["/users"]++ })
+	router.Add("PATCH", "/users/:userId", func(ctx *Context) { handlers["/users/:userId"]++ })
+	router.Add("PATCH", "/users/:userId/sales", func(ctx *Context) { handlers["/users/:userId/sales"]++ })
+	router.Add("PATCH", "/users/:userId/sales/:saleId", func(ctx *Context) { handlers["/users/:userId/sales/:saleId"]++ })
+
+	router.handle(createContext("PATCH", "/"))
+	router.handle(createContext("PATCH", "/users"))
+	router.handle(createContext("PATCH", "/users/1"))
+	router.handle(createContext("PATCH", "/users/1/sales"))
+	router.handle(createContext("PATCH", "/users/1/sales/123"))
+
+	assert.Equal(t, 1, handlers["/"])
+	assert.Equal(t, 1, handlers["/users"])
+	assert.Equal(t, 1, handlers["/users/:userId"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales/:saleId"])
+}
+
+func TestRouterOptions(t *testing.T) {
+	handlers := map[string]int{}
+	router := NewRouter()
+
+	//handlers["/"] = false
+	router.Add("OPTIONS", "/", func(ctx *Context) { handlers["/"]++ })
+	router.Add("OPTIONS", "/users", func(ctx *Context) { handlers["/users"]++ })
+	router.Add("OPTIONS", "/users/:userId", func(ctx *Context) { handlers["/users/:userId"]++ })
+	router.Add("OPTIONS", "/users/:userId/sales", func(ctx *Context) { handlers["/users/:userId/sales"]++ })
+	router.Add("OPTIONS", "/users/:userId/sales/:saleId", func(ctx *Context) { handlers["/users/:userId/sales/:saleId"]++ })
+
+	router.handle(createContext("OPTIONS", "/"))
+	router.handle(createContext("OPTIONS", "/users"))
+	router.handle(createContext("OPTIONS", "/users/1"))
+	router.handle(createContext("OPTIONS", "/users/1/sales"))
+	router.handle(createContext("OPTIONS", "/users/1/sales/123"))
+
+	assert.Equal(t, 1, handlers["/"])
+	assert.Equal(t, 1, handlers["/users"])
+	assert.Equal(t, 1, handlers["/users/:userId"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales/:saleId"])
+}
+
+func TestRouterHead(t *testing.T) {
+	handlers := map[string]int{}
+	router := NewRouter()
+
+	//handlers["/"] = false
+	router.Add("HEAD", "/", func(ctx *Context) { handlers["/"]++ })
+	router.Add("HEAD", "/users", func(ctx *Context) { handlers["/users"]++ })
+	router.Add("HEAD", "/users/:userId", func(ctx *Context) { handlers["/users/:userId"]++ })
+	router.Add("HEAD", "/users/:userId/sales", func(ctx *Context) { handlers["/users/:userId/sales"]++ })
+	router.Add("HEAD", "/users/:userId/sales/:saleId", func(ctx *Context) { handlers["/users/:userId/sales/:saleId"]++ })
+
+	router.handle(createContext("HEAD", "/"))
+	router.handle(createContext("HEAD", "/users"))
+	router.handle(createContext("HEAD", "/users/1"))
+	router.handle(createContext("HEAD", "/users/1/sales"))
+	router.handle(createContext("HEAD", "/users/1/sales/123"))
+
+	assert.Equal(t, 1, handlers["/"])
+	assert.Equal(t, 1, handlers["/users"])
+	assert.Equal(t, 1, handlers["/users/:userId"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales"])
+	assert.Equal(t, 1, handlers["/users/:userId/sales/:saleId"])
+}

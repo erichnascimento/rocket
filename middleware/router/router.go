@@ -27,8 +27,15 @@ func (c *Context) GetParam(name string) string {
 
 type HandleFunc func(ctx *Context)
 
+// TODO: Refactory to hash table
 type routeEntries struct {
-	get []*Route
+	get     []*Route
+	post    []*Route
+	put     []*Route
+	del     []*Route
+	patch   []*Route
+	options []*Route
+	head    []*Route
 }
 
 type Router struct {
@@ -39,7 +46,15 @@ type Router struct {
 
 func NewRouter() *Router {
 	return &Router{
-		routes:    &routeEntries{make([]*Route, 0)},
+		routes: &routeEntries{
+			make([]*Route, 0),
+			make([]*Route, 0),
+			make([]*Route, 0),
+			make([]*Route, 0),
+			make([]*Route, 0),
+			make([]*Route, 0),
+			make([]*Route, 0),
+		},
 		resources: map[string]bool{},
 	}
 }
@@ -56,6 +71,18 @@ func (this *Router) handle(ctx *rocket.Context) {
 	switch ctx.Request.Method {
 	case "GET":
 		routes = this.routes.get
+	case "POST":
+		routes = this.routes.post
+	case "PUT":
+		routes = this.routes.put
+	case "DELETE":
+		routes = this.routes.del
+	case "PATCH":
+		routes = this.routes.patch
+	case "OPTIONS":
+		routes = this.routes.options
+	case "HEAD":
+		routes = this.routes.head
 	}
 
 	for _, route := range routes {
@@ -74,12 +101,28 @@ func (this *Router) handle(ctx *rocket.Context) {
 
 func (r *Router) Add(method, path string, handler HandleFunc) *Router {
 	_, route := newRoute(path, handler)
-	if method == "GET" {
-		r.routes.get = append(r.routes.get, route)
-		for k, v := range route.resources {
-			r.resources[k] = v
-		}
+
+	for k, v := range route.resources {
+		r.resources[k] = v
 	}
+
+	switch method {
+	case "GET":
+		r.routes.get = append(r.routes.get, route)
+	case "POST":
+		r.routes.post = append(r.routes.post, route)
+	case "PUT":
+		r.routes.put = append(r.routes.put, route)
+	case "DELETE":
+		r.routes.del = append(r.routes.del, route)
+	case "PATCH":
+		r.routes.patch = append(r.routes.patch, route)
+	case "OPTIONS":
+		r.routes.options = append(r.routes.options, route)
+	case "HEAD":
+		r.routes.head = append(r.routes.head, route)
+	}
+
 	return r
 }
 
