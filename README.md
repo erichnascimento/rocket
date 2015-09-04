@@ -7,21 +7,23 @@ $ go get github.com/erich
 ```
 
 ## Usage
-```golang
+```go
+
 package main
 
 import (
 	"fmt"
 
-	"github.com/erichnascimento/rocket/middleware/router"
 	"github.com/erichnascimento/rocket/middleware/logger"
+	"github.com/erichnascimento/rocket/middleware/router"
 	"github.com/erichnascimento/rocket/server"
 )
 
 func main() {
 	s := server.New("0.0.0.0:3000")
 
-  s.Use()
+	s.Use(logger.NewLogger())
+
 	r := router.NewRouter()
 	r.Add("GET", "/test", func(ctx *router.Context) {
 		fmt.Fprintf(ctx, "Welcome!\n")
@@ -42,6 +44,7 @@ func main() {
 	s.Use(r)
 	s.Serve()
 }
+
 
 ```
 
