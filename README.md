@@ -3,7 +3,7 @@ A rest API server library focused in speed and simplicity
 
 ## Install
 ```sh
-$ go get github.com/erich
+$ go get github.com/erichnascimento/rocket
 ```
 
 ## Usage
