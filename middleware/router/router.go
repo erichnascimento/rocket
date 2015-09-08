@@ -2,6 +2,7 @@ package router
 
 import (
 	"errors"
+	"log"
 	"strings"
 
 	"github.com/erichnascimento/rocket"
@@ -28,35 +29,16 @@ func (c *Context) GetParam(name string) string {
 
 type HandleFunc func(ctx *Context)
 
-// TODO: Refactory to hash table
-type routeEntries struct {
-	get     []*Route
-	post    []*Route
-	put     []*Route
-	del     []*Route
-	patch   []*Route
-	options []*Route
-	head    []*Route
-}
-
 type Router struct {
 	next      middleware.HandleFunc
-	routes    *routeEntries
+	routes    map[string][]*Route
 	resources map[string]bool
 	root      string
 }
 
 func NewRouter(root string) *Router {
 	return &Router{
-		routes: &routeEntries{
-			make([]*Route, 0),
-			make([]*Route, 0),
-			make([]*Route, 0),
-			make([]*Route, 0),
-			make([]*Route, 0),
-			make([]*Route, 0),
-			make([]*Route, 0),
-		},
+		routes:    map[string][]*Route{},
 		root:      root,
 		resources: map[string]bool{},
 	}
@@ -71,27 +53,11 @@ func (this *Router) handle(ctx *rocket.Context) {
 	err, req := newRequest(this.root, ctx.Request.RequestURI, this.resources)
 	if err == ErrorRequestHasDiferentRoot {
 		this.next(ctx)
+		return
 	}
 
-	var routes []*Route
-	switch ctx.Request.Method {
-	case "GET":
-		routes = this.routes.get
-	case "POST":
-		routes = this.routes.post
-	case "PUT":
-		routes = this.routes.put
-	case "DELETE":
-		routes = this.routes.del
-	case "PATCH":
-		routes = this.routes.patch
-	case "OPTIONS":
-		routes = this.routes.options
-	case "HEAD":
-		routes = this.routes.head
-	}
-
-	for _, route := range routes {
+	for _, route := range this.routes[ctx.Request.Method] {
+		log.Println(route.compiledRoute, req.compiledPath)
 		if route.compiledRoute == req.compiledPath {
 			if route.handler != nil {
 				route.handler(&Context{ctx, route, req})
@@ -110,22 +76,12 @@ func (r *Router) Add(method, path string, handler HandleFunc) *Router {
 		r.resources[k] = v
 	}
 
-	switch method {
-	case "GET":
-		r.routes.get = append(r.routes.get, route)
-	case "POST":
-		r.routes.post = append(r.routes.post, route)
-	case "PUT":
-		r.routes.put = append(r.routes.put, route)
-	case "DELETE":
-		r.routes.del = append(r.routes.del, route)
-	case "PATCH":
-		r.routes.patch = append(r.routes.patch, route)
-	case "OPTIONS":
-		r.routes.options = append(r.routes.options, route)
-	case "HEAD":
-		r.routes.head = append(r.routes.head, route)
+	// create an array for method
+	if r.routes[method] == nil {
+		r.routes[method] = make([]*Route, 0)
 	}
+
+	r.routes[method] = append(r.routes[method], route)
 
 	return r
 }
