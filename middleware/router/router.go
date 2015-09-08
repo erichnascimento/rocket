@@ -2,7 +2,6 @@ package router
 
 import (
 	"errors"
-	"log"
 	"strings"
 
 	"github.com/erichnascimento/rocket"
@@ -57,7 +56,6 @@ func (this *Router) handle(ctx *rocket.Context) {
 	}
 
 	for _, route := range this.routes[ctx.Request.Method] {
-		log.Println(route.compiledRoute, req.compiledPath)
 		if route.compiledRoute == req.compiledPath {
 			if route.handler != nil {
 				route.handler(&Context{ctx, route, req})
