@@ -9,6 +9,8 @@ import (
 	"github.com/bmizerany/assert"
 )
 
+const DefaultRouteRoot = "/api/v1"
+
 func TestGetPath(t *testing.T) {
 	paths := map[string]string{
 		"/user":          "/user",
@@ -47,8 +49,20 @@ func TestFullRoute(t *testing.T) {
 	assert.Equal(t, r.params[1], "saleId")
 }
 
+func TestRootPrefix(t *testing.T) {
+	err, r := newRequest("/api/v1", "", nil)
+	assert.Equal(t, err, ErrorRequestHasDiferentRoot)
+
+	err, r = newRequest("/api/v1", "/bla/bla/bla", nil)
+	assert.Equal(t, err, ErrorRequestHasDiferentRoot)
+
+	err, r = newRequest("/api/v1", "/api/v1/user", map[string]bool{"user": true})
+	assert.Equal(t, err, nil)
+	assert.Equal(t, r.compiledPath, "./user")
+}
+
 func TestEmptyRequest(t *testing.T) {
-	err, r := newRequest("", nil)
+	err, r := newRequest("", "", nil)
 
 	assert.Equal(t, err, nil)
 	assert.NotEqual(t, r, nil)
@@ -58,14 +72,15 @@ func TestEmptyRequest(t *testing.T) {
 }
 
 func TestFullRequest(t *testing.T) {
-	_, r := newRequest("/users", map[string]bool{"users": true})
+	_, r := newRequest("/api/v1", "/api/v1/users", map[string]bool{"users": true})
 	assert.Equal(t, r.compiledPath, "./users")
 	assert.Equal(t, len(r.params), 0)
 }
 
 func TestRequestWithResourceAndParams(t *testing.T) {
 	_, r := newRequest(
-		"/users/123/sales/444",
+		"/api/v1",
+		"/api/v1/users/123/sales/444",
 		map[string]bool{
 			"users": true,
 			"sales": true,
@@ -81,9 +96,14 @@ func createContext(method, URI string) *rocket.Context {
 	return rocket.NewContext(nil, req, 0, 0)
 }
 
+func nopeHandleFunc(ctx *rocket.Context) {
+
+}
+
 func TestRouterGet(t *testing.T) {
 	handlers := map[string]int{}
-	router := NewRouter()
+	router := NewRouter("")
+	router.CreateHandle(nopeHandleFunc)
 
 	//handlers["/"] = false
 	router.Add("GET", "/", func(ctx *Context) { handlers["/"]++ })
@@ -110,7 +130,8 @@ func TestRouterGet(t *testing.T) {
 }
 
 func TestContext(t *testing.T) {
-	router := NewRouter()
+	router := NewRouter(DefaultRouteRoot)
+	router.CreateHandle(nopeHandleFunc)
 
 	// Unexistent param should return empty string
 	router.Add("GET", "/", func(ctx *Context) {
@@ -133,7 +154,8 @@ func TestContext(t *testing.T) {
 
 func TestRouterPost(t *testing.T) {
 	handlers := map[string]int{}
-	router := NewRouter()
+	router := NewRouter("")
+	router.CreateHandle(nopeHandleFunc)
 
 	//handlers["/"] = false
 	router.Add("POST", "/", func(ctx *Context) { handlers["/"]++ })
@@ -157,7 +179,8 @@ func TestRouterPost(t *testing.T) {
 
 func TestRouterPut(t *testing.T) {
 	handlers := map[string]int{}
-	router := NewRouter()
+	router := NewRouter("")
+	router.CreateHandle(nopeHandleFunc)
 
 	//handlers["/"] = false
 	router.Add("PUT", "/", func(ctx *Context) { handlers["/"]++ })
@@ -181,7 +204,8 @@ func TestRouterPut(t *testing.T) {
 
 func TestRouterDelete(t *testing.T) {
 	handlers := map[string]int{}
-	router := NewRouter()
+	router := NewRouter("")
+	router.CreateHandle(nopeHandleFunc)
 
 	//handlers["/"] = false
 	router.Add("DELETE", "/", func(ctx *Context) { handlers["/"]++ })
@@ -205,7 +229,8 @@ func TestRouterDelete(t *testing.T) {
 
 func TestRouterPatch(t *testing.T) {
 	handlers := map[string]int{}
-	router := NewRouter()
+	router := NewRouter("")
+	router.CreateHandle(nopeHandleFunc)
 
 	//handlers["/"] = false
 	router.Add("PATCH", "/", func(ctx *Context) { handlers["/"]++ })
@@ -229,7 +254,8 @@ func TestRouterPatch(t *testing.T) {
 
 func TestRouterOptions(t *testing.T) {
 	handlers := map[string]int{}
-	router := NewRouter()
+	router := NewRouter("")
+	router.CreateHandle(nopeHandleFunc)
 
 	//handlers["/"] = false
 	router.Add("OPTIONS", "/", func(ctx *Context) { handlers["/"]++ })
@@ -253,7 +279,8 @@ func TestRouterOptions(t *testing.T) {
 
 func TestRouterHead(t *testing.T) {
 	handlers := map[string]int{}
-	router := NewRouter()
+	router := NewRouter("")
+	router.CreateHandle(nopeHandleFunc)
 
 	//handlers["/"] = false
 	router.Add("HEAD", "/", func(ctx *Context) { handlers["/"]++ })

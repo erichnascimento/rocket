@@ -14,8 +14,10 @@ func main() {
 	// Add logger middleware
 	s.Use(logger.NewLogger())
 
-	// Add router middleware
-	r := router.NewRouter()
+	// Add router middleware prefixed for "/myapi/v2"
+	r := router.NewRouter("/myapi/v2")
+
+	// add a simple route
 	r.Add("GET", "/test", func(ctx *router.Context) {
 		fmt.Fprintf(ctx, "Welcome!\n")
 	})
@@ -25,12 +27,12 @@ func main() {
 		fmt.Fprintf(ctx, "List users!\n")
 	})
 
-	// add route
+	// add route with param
 	r.Add("GET", "/users/:userId", func(ctx *router.Context) {
 		fmt.Fprintf(ctx, "Listing user %s!\n", ctx.GetParam("userId"))
 	})
 
-	// add route
+	// add route and subroute
 	r.Add("GET", "/users/:userId/sales/:saleId", func(ctx *router.Context) {
 		fmt.Fprintf(ctx, "Listing user %s and sale %s!\n", ctx.GetParam("userId"), ctx.GetParam("saleId"))
 	})

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/erichnascimento/rocket"
@@ -42,9 +43,10 @@ type Router struct {
 	next      middleware.HandleFunc
 	routes    *routeEntries
 	resources map[string]bool
+	root      string
 }
 
-func NewRouter() *Router {
+func NewRouter(root string) *Router {
 	return &Router{
 		routes: &routeEntries{
 			make([]*Route, 0),
@@ -55,6 +57,7 @@ func NewRouter() *Router {
 			make([]*Route, 0),
 			make([]*Route, 0),
 		},
+		root:      root,
 		resources: map[string]bool{},
 	}
 }
@@ -65,7 +68,10 @@ func (this *Router) CreateHandle(next middleware.HandleFunc) middleware.HandleFu
 }
 
 func (this *Router) handle(ctx *rocket.Context) {
-	_, req := newRequest(ctx.Request.RequestURI, this.resources)
+	err, req := newRequest(this.root, ctx.Request.RequestURI, this.resources)
+	if err == ErrorRequestHasDiferentRoot {
+		this.next(ctx)
+	}
 
 	var routes []*Route
 	switch ctx.Request.Method {
@@ -94,9 +100,7 @@ func (this *Router) handle(ctx *rocket.Context) {
 		}
 	}
 
-	if this.next != nil {
-		this.next(ctx)
-	}
+	this.next(ctx)
 }
 
 func (r *Router) Add(method, path string, handler HandleFunc) *Router {
@@ -135,6 +139,9 @@ func getPath(path string) string {
 }
 
 func explodePathParts(path string) []string {
+	if path == "" {
+		return []string{}
+	}
 	return strings.Split(getPath(path[1:]), "/")
 }
 
@@ -181,21 +188,29 @@ func newRoute(route string, handler HandleFunc) (error, *Route) {
 	return err, r
 }
 
+var ErrorRequestHasDiferentRoot = errors.New("Request has diferent root")
+
 type Request struct {
 	url          string
 	resources    map[string]bool
 	compiledPath string
 	params       []string
+	root         string
 }
 
 func (r *Request) ParseURL(url string) error {
 	r.compiledPath = "."
+	r.url = url
 
-	if r.url == url {
-		return nil
+	if r.root != "" {
+		if !strings.HasPrefix(r.url, r.root) {
+			return ErrorRequestHasDiferentRoot
+		}
+
+		// remove root from url
+		r.url = strings.Replace(r.url, r.root, "", -1)
 	}
 
-	r.url = url
 	for _, v := range explodePathParts(r.url) {
 		if v == "" {
 			continue
@@ -214,11 +229,15 @@ func (r *Request) ParseURL(url string) error {
 	return nil
 }
 
-func newRequest(url string, resources map[string]bool) (error, *Request) {
+func newRequest(root, url string, resources map[string]bool) (error, *Request) {
 	r := new(Request)
 	r.resources = resources
 	r.params = make([]string, 0)
-	err := r.ParseURL(url)
+	r.root = root
 
-	return err, r
+	if err := r.ParseURL(url); err != nil {
+		return err, nil
+	}
+
+	return nil, r
 }
