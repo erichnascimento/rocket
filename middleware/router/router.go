@@ -195,3 +195,10 @@ func newRequest(root, url string, resources map[string]bool) (error, *Request) {
 
 	return nil, r
 }
+
+func WrapMiddleware(m middleware.Middleware) HandleFunc {
+	handler := m.CreateHandle(func(ctx *rocket.Context) {})
+	return func(ctx *Context) {
+		handler(ctx.Context)
+	}
+}
