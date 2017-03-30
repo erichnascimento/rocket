@@ -31,10 +31,6 @@ func (s *Rocket) ServeHTTP(rw http.ResponseWriter, rq *http.Request) {
 	s.handler(wrw, rq)
 }
 
-func (s *Rocket) finalHandlerFunc(rw http.ResponseWriter, rq *http.Request) {
-	//log.Println("Done ", rq.Context())
-}
-
 func (s *Rocket) Use(m middleware.Middleware) {
 	if s.middlewares == nil {
 		s.middlewares = make([]middleware.Middleware, 0)
@@ -42,38 +38,10 @@ func (s *Rocket) Use(m middleware.Middleware) {
 	s.middlewares = append(s.middlewares, m)
 }
 
-type ResponseWriter struct {
-	http.ResponseWriter
-	written int
-	status int
+func (s *Rocket) finalHandlerFunc(rw http.ResponseWriter, rq *http.Request) {
+	//log.Println("Done ", rq.Context())
 }
 
-// Override in order to capture bytes written
-func (rw *ResponseWriter) Write(b []byte) (int, error) {
-	n, err := rw.ResponseWriter.Write(b)
-	rw.written += n
-
-	return n, err
-}
-
-// Override in order to capture status
-func (rw *ResponseWriter) WriteHeader(code int) {
-	rw.ResponseWriter.WriteHeader(code)
-	rw.status = code
-}
-
-func wrapResponseWriter(rw http.ResponseWriter) http.ResponseWriter {
-	result := &ResponseWriter{ ResponseWriter: rw}
-	result.status = http.StatusOK
-	rw.WriteHeader(result.status)
-
-	return result
-}
-
-func GetContentLength(rw http.ResponseWriter) int {
-	return rw.(*ResponseWriter).written
-}
-
-func GetStatusCode(rw http.ResponseWriter) int {
-	return rw.(*ResponseWriter).status
+func NewRocket() *Rocket {
+	return new(Rocket)
 }
