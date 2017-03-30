@@ -4,7 +4,6 @@ import (
 	"errors"
 	"strings"
 	"net/http"
-	"log"
 	"context"
 )
 
@@ -40,12 +39,10 @@ func (r *Router) handle(rw http.ResponseWriter, req *http.Request) {
 		if route.compiledRoute == reqInfo.compiledPath {
 			ctx := req.Context()
 			for k, name := range route.params {
-				//log.Println(k,)
 				ctx = context.WithValue(ctx, name, reqInfo.params[k])
 			}
 
 			reqWithParams := req.WithContext(ctx)
-			log.Printf("%q", reqWithParams.Context())
 			for _, handler := range  route.handlers {
 				handler(rw, reqWithParams)
 			}
@@ -71,6 +68,26 @@ func (r *Router) Add(method, path string, handlers...http.HandlerFunc) *Router {
 	r.routes[method] = append(r.routes[method], route)
 
 	return r
+}
+
+func (r *Router) Get(path string, handlers...http.HandlerFunc) *Router {
+	return r.Add(http.MethodGet, path, handlers...)
+}
+
+func (r *Router) Post(path string, handlers...http.HandlerFunc) *Router {
+	return r.Add(http.MethodPost, path, handlers...)
+}
+
+func (r *Router) Put(path string, handlers...http.HandlerFunc) *Router {
+	return r.Add(http.MethodPut, path, handlers...)
+}
+
+func (r *Router) Patch(path string, handlers...http.HandlerFunc) *Router {
+	return r.Add(http.MethodPatch, path, handlers...)
+}
+
+func (r *Router) Delete(path string, handlers...http.HandlerFunc) *Router {
+	return r.Add(http.MethodDelete, path, handlers...)
 }
 
 func getPath(path string) string {
@@ -146,7 +163,6 @@ func (r *RequestInfo) ParseURL(url string) error {
 	r.url = url
 
 	if r.root != "" {
-		log.Println(r.url, r.root)
 		if !strings.HasPrefix(r.url, r.root) {
 			return ErrorRequestHasDifferentRoot
 		}
@@ -178,7 +194,6 @@ func newRequestInfo(root, url string, resources map[string]bool) (error, *Reques
 	r.resources = resources
 	r.params = make([]string, 0)
 	r.root = root
-	log.Printf("%q", r)
 	if err := r.ParseURL(url); err != nil {
 		return err, nil
 	}
