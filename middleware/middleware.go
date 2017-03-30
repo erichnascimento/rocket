@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"github.com/erichnascimento/rocket"
 	"net/http"
 )
 
