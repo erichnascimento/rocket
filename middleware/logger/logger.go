@@ -4,30 +4,29 @@ import (
 	"log"
 	"time"
 
-	"github.com/erichnascimento/rocket"
-	"github.com/erichnascimento/rocket/middleware"
-
 	"github.com/dustin/go-humanize"
+	"net/http"
+	"github.com/erichnascimento/rocket/server"
 )
 
 // Logger is a middleware for loggin requests
 type Logger struct {
-	next  middleware.HandleFunc
+	next  http.HandlerFunc
 	start time.Time
 }
 
 // CreateHandle create a new handler
-func (l *Logger) CreateHandle(next middleware.HandleFunc) middleware.HandleFunc {
+func (l *Logger) Mount(next http.HandlerFunc) http.HandlerFunc {
 	l.next = next
 	return l.handle
 }
 
-func (l *Logger) handle(ctx *rocket.Context) {
+func (l *Logger) handle(rw http.ResponseWriter, req *http.Request) {
 	l.start = time.Now()
-	l.next(ctx)
+	l.next(rw, req)
 	duration := time.Since(l.start) / time.Millisecond
-	contentLenght := humanize.Bytes(uint64(ctx.GetContentLength()))
-	log.Printf("%s %s %d %dms - %s", ctx.Request.Method, ctx.Request.RequestURI, ctx.GetStatusCode(), duration, contentLenght)
+	contentLength := humanize.Bytes(uint64(server.GetContentLength(rw)))
+	log.Printf("%s %s %d %dms - %s", req.Method, req.RequestURI, server.GetStatusCode(rw), duration, contentLength)
 }
 
 // Create a new logger middleware
