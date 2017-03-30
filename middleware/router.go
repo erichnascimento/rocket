@@ -1,35 +1,16 @@
-package router
+package middleware
 
 import (
 	"errors"
 	"strings"
-
-	"github.com/erichnascimento/rocket"
-	"github.com/erichnascimento/rocket/middleware"
-	//"log"
+	"net/http"
+	"log"
+	"context"
 )
 
-// Context type
-type Context struct {
-	*rocket.Context
-	route   *Route
-	request *Request
-}
-
-// GetParam return a param value
-func (c *Context) GetParam(name string) string {
-	for k, v := range c.route.params {
-		if v == name {
-			return c.request.params[k]
-		}
-	}
-	return ""
-}
-
-type HandleFunc func(ctx *Context)
 
 type Router struct {
-	next      middleware.HandleFunc
+	next      http.HandlerFunc
 	routes    map[string][]*Route
 	resources map[string]bool
 	root      string
@@ -43,32 +24,40 @@ func NewRouter(root string) *Router {
 	}
 }
 
-func (this *Router) CreateHandle(next middleware.HandleFunc) middleware.HandleFunc {
-	this.next = next
-	return this.handle
+func (r *Router) Mount(next http.HandlerFunc) http.HandlerFunc {
+	r.next = next
+	return r.handle
 }
 
-func (this *Router) handle(ctx *rocket.Context) {
-	err, req := newRequest(this.root, ctx.Request.RequestURI, this.resources)
-	if err == ErrorRequestHasDiferentRoot {
-		this.next(ctx)
+func (r *Router) handle(rw http.ResponseWriter, req *http.Request) {
+	err, reqInfo := newRequestInfo(r.root, req.RequestURI, r.resources)
+	if err == ErrorRequestHasDifferentRoot {
+		r.next(rw, req)
 		return
 	}
 
-	for _, route := range this.routes[ctx.Request.Method] {
-		if route.compiledRoute == req.compiledPath {
-			if route.handler != nil {
-				route.handler(&Context{ctx, route, req})
+	for _, route := range r.routes[req.Method] {
+		if route.compiledRoute == reqInfo.compiledPath {
+			ctx := req.Context()
+			for k, name := range route.params {
+				//log.Println(k,)
+				ctx = context.WithValue(ctx, name, reqInfo.params[k])
+			}
+
+			reqWithParams := req.WithContext(ctx)
+			log.Printf("%q", reqWithParams.Context())
+			for _, handler := range  route.handlers {
+				handler(rw, reqWithParams)
 			}
 			break
 		}
 	}
 
-	this.next(ctx)
+	r.next(rw, req)
 }
 
-func (r *Router) Add(method, path string, handler HandleFunc) *Router {
-	_, route := newRoute(path, handler)
+func (r *Router) Add(method, path string, handlers...http.HandlerFunc) *Router {
+	_, route := newRoute(path, handlers...)
 
 	for k, v := range route.resources {
 		r.resources[k] = v
@@ -104,7 +93,7 @@ type Route struct {
 	compiledRoute string
 	resources     map[string]bool
 	params        []string
-	handler       HandleFunc
+	handlers	[]http.HandlerFunc
 }
 
 func (r *Route) CompileRoute(route string) error {
@@ -132,19 +121,19 @@ func (r *Route) CompileRoute(route string) error {
 	return nil
 }
 
-func newRoute(route string, handler HandleFunc) (error, *Route) {
+func newRoute(route string, handlers...http.HandlerFunc) (error, *Route) {
 	r := new(Route)
 	r.resources = map[string]bool{}
 	r.params = make([]string, 0)
-	r.handler = handler
+	r.handlers = handlers
 	err := r.CompileRoute(route)
 
 	return err, r
 }
 
-var ErrorRequestHasDiferentRoot = errors.New("Request has diferent root")
+var ErrorRequestHasDifferentRoot = errors.New("Request has diferent root")
 
-type Request struct {
+type RequestInfo struct {
 	url          string
 	resources    map[string]bool
 	compiledPath string
@@ -152,13 +141,14 @@ type Request struct {
 	root         string
 }
 
-func (r *Request) ParseURL(url string) error {
+func (r *RequestInfo) ParseURL(url string) error {
 	r.compiledPath = "."
 	r.url = url
 
 	if r.root != "" {
+		log.Println(r.url, r.root)
 		if !strings.HasPrefix(r.url, r.root) {
-			return ErrorRequestHasDiferentRoot
+			return ErrorRequestHasDifferentRoot
 		}
 
 		// remove root from url
@@ -183,22 +173,15 @@ func (r *Request) ParseURL(url string) error {
 	return nil
 }
 
-func newRequest(root, url string, resources map[string]bool) (error, *Request) {
-	r := new(Request)
+func newRequestInfo(root, url string, resources map[string]bool) (error, *RequestInfo) {
+	r := new(RequestInfo)
 	r.resources = resources
 	r.params = make([]string, 0)
 	r.root = root
-
+	log.Printf("%q", r)
 	if err := r.ParseURL(url); err != nil {
 		return err, nil
 	}
 
 	return nil, r
-}
-
-func WrapMiddleware(m middleware.Middleware) HandleFunc {
-	handler := m.CreateHandle(func(ctx *rocket.Context) {})
-	return func(ctx *Context) {
-		handler(ctx.Context)
-	}
 }
