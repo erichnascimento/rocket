@@ -1,42 +1,47 @@
 package main
 
 import (
+	"net/http"
 	"fmt"
 
-	"github.com/erichnascimento/rocket/middleware/logger"
-	"github.com/erichnascimento/rocket/middleware/router"
 	"github.com/erichnascimento/rocket/server"
+	"github.com/erichnascimento/rocket/middleware"
+	"github.com/erichnascimento/rocket/middleware/logger"
 )
 
 func main() {
-	s := server.New("0.0.0.0:3000")
+	s := server.NewRocket()
 
-	// Add logger middleware
+	// Use a Logger middleware for logging
 	s.Use(logger.NewLogger())
 
-	// Add router middleware prefixed for "/myapi/v2"
-	r := router.NewRouter("/myapi/v2")
+	// Create a new router middleware for API `my_api`, version 2
+	r := middleware.NewRouter("/my_api/v2")
+	r.Get(`/users`, listUsersHandler)
+	r.Get(`/users/:id`, getUserHandler)
 
-	// add a simple route
-	r.Add("GET", "/test", func(ctx *router.Context) {
-		fmt.Fprintf(ctx, "Welcome!\n")
-	})
-
-	// add a route
-	r.Add("GET", "/users", func(ctx *router.Context) {
-		fmt.Fprintf(ctx, "List users!\n")
-	})
-
-	// add route with param
-	r.Add("GET", "/users/:userId", func(ctx *router.Context) {
-		fmt.Fprintf(ctx, "Listing user %s!\n", ctx.GetParam("userId"))
-	})
-
-	// add route and subroute
-	r.Add("GET", "/users/:userId/sales/:saleId", func(ctx *router.Context) {
-		fmt.Fprintf(ctx, "Listing user %s and sale %s!\n", ctx.GetParam("userId"), ctx.GetParam("saleId"))
-	})
-
+	// use the router
 	s.Use(r)
-	s.Serve()
+
+	// Start listening and serving
+	s.ListenAndServe(":2000")
+}
+
+var users = map[interface{}]string{
+	`1`:"Jacob",
+	`2`:"Dudu",
+}
+
+func listUsersHandler(rw http.ResponseWriter, _ *http.Request) {
+	fmt.Fprint(rw, `[`)
+	for id, name := range users {
+		fmt.Fprintf(rw, `{"id": %d, "name": "%s"},`, id, name)
+	}
+	fmt.Fprint(rw, `]`)
+}
+
+func getUserHandler(rw http.ResponseWriter, req *http.Request) {
+	id := req.Context().Value(`id`)
+	user := users[id]
+	fmt.Fprint(rw, user)
 }
