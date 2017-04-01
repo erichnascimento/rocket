@@ -1,4 +1,4 @@
-package logger
+package middleware
 
 import (
 	"log"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"net/http"
-	"github.com/erichnascimento/rocket/server"
+	"github.com/erichnascimento/rocket/server/response"
 )
 
 // Logger is a middleware for loggin requests
@@ -25,8 +25,8 @@ func (l *Logger) handle(rw http.ResponseWriter, req *http.Request) {
 	l.start = time.Now()
 	l.next(rw, req)
 	duration := time.Since(l.start) / time.Millisecond
-	contentLength := humanize.Bytes(uint64(server.GetContentLength(rw)))
-	log.Printf("%s %s %d %dms - %s", req.Method, req.RequestURI, server.GetStatusCode(rw), duration, contentLength)
+	contentLength := humanize.Bytes(uint64(response.GetContentLength(rw)))
+	log.Printf("%s %s %d %dms - %s", req.Method, req.RequestURI, response.GetStatusCode(rw), duration, contentLength)
 }
 
 // Create a new logger middleware

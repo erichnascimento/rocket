@@ -6,14 +6,14 @@ import (
 
 	"github.com/erichnascimento/rocket/server"
 	"github.com/erichnascimento/rocket/middleware"
-	"github.com/erichnascimento/rocket/middleware/logger"
+	"log"
 )
 
 func main() {
 	s := server.NewRocket()
 
 	// Use a Logger middleware for logging
-	s.Use(logger.NewLogger())
+	s.Use(middleware.NewLogger())
 
 	// Create a new router middleware for API `my_api`, version 2
 	r := middleware.NewRouter("/my_api/v2")
@@ -24,7 +24,8 @@ func main() {
 	s.Use(r)
 
 	// Start listening and serving
-	s.ListenAndServe(":2000")
+	err := s.ListenAndServe(":2000")
+	log.Print(err)
 }
 
 var users = map[interface{}]string{

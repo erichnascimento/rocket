@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/erichnascimento/rocket/middleware"
+	"github.com/erichnascimento/rocket/server/response"
 )
 
 type Rocket struct {
@@ -27,7 +28,7 @@ func (s *Rocket) ListenAndServe(addr string) error {
 }
 
 func (s *Rocket) ServeHTTP(rw http.ResponseWriter, rq *http.Request) {
-	wrw := wrapResponseWriter(rw)
+	wrw := response.WrapResponseWriter(rw)
 	s.handler(wrw, rq)
 }
 

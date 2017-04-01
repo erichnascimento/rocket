@@ -1,4 +1,4 @@
-package server
+package response
 
 import "net/http"
 
@@ -22,7 +22,7 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.status = code
 }
 
-func wrapResponseWriter(rw http.ResponseWriter) http.ResponseWriter {
+func WrapResponseWriter(rw http.ResponseWriter) http.ResponseWriter {
 	result := &responseWriter{ ResponseWriter: rw}
 	result.status = http.StatusOK
 	rw.WriteHeader(result.status)
