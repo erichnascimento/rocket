@@ -1,13 +1,11 @@
 // http://www.html5rocks.com/en/tutorials/cors/?redirect_from_locale=pt
 
-package cors
+package middleware
 
 import (
 	"strconv"
 	"strings"
-
-	"github.com/erichnascimento/rocket"
-	"github.com/erichnascimento/rocket/middleware"
+	"net/http"
 )
 
 type Config struct {
@@ -34,45 +32,43 @@ func NewConfigPreflight(methods, headers []string) *Config {
 	return c
 }
 
-// jsonBody is a middleware for handle cors
 type Cors struct {
 	config *Config
-	next   middleware.HandleFunc
+	next   http.HandlerFunc
 }
 
-// CreateHandle create a new handler
-func (c *Cors) CreateHandle(next middleware.HandleFunc) middleware.HandleFunc {
+func (c *Cors) Mount(next http.HandlerFunc) http.HandlerFunc {
 	c.next = next
 	if c.config.Preflight {
-		return c.PreflightHandle
+		return c.preflightHandler
 	}
 
-	return c.SimpleHandle
+	return c.simpleHandler
 }
 
-func (c *Cors) SimpleHandle(ctx *rocket.Context) {
-	ctx.Header().Add("Access-Control-Allow-Credentials", strconv.FormatBool(c.config.AllowCredentials))
-	ctx.Header().Add("Access-Control-Allow-Origin", c.config.AllowOrigin)
+func (c *Cors) simpleHandler(rw http.ResponseWriter, req *http.Request) {
+	rw.Header().Add("Access-Control-Allow-Credentials", strconv.FormatBool(c.config.AllowCredentials))
+	rw.Header().Add("Access-Control-Allow-Origin", c.config.AllowOrigin)
 
 	if c.config.AllowMethods != nil {
-		ctx.Header().Add("Access-Control-Allow-Methods", strings.Join(c.config.AllowMethods, ", "))
+		rw.Header().Add("Access-Control-Allow-Methods", strings.Join(c.config.AllowMethods, ", "))
 	}
 
 	if c.config.AllowHeaders != nil {
-		ctx.Header().Add("Access-Control-Allow-Headers", strings.Join(c.config.AllowHeaders, ", "))
+		rw.Header().Add("Access-Control-Allow-Headers", strings.Join(c.config.AllowHeaders, ", "))
 	}
 	//Access-Control-Allow-Methods
-	c.next(ctx)
+	c.next(rw, req)
 }
 
-func (c *Cors) PreflightHandle(ctx *rocket.Context) {
+func (c *Cors) preflightHandler(rw http.ResponseWriter, req *http.Request) {
 	//ctx.Header().Add("Access-Control-Allow-Credentials", strconv.FormatBool(c.config.AllowCredentials))
 	//ctx.Header().Add("Access-Control-Allow-Origin", c.config.AllowOrigin)
 	//ctx.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
 	//Access-Control-Allow-Methods
-	ctx.Header().Add("Access-Control-Allow-Methods", strings.Join(c.config.AllowMethods, ", "))
-	ctx.Header().Add("Access-Control-Allow-Headers", strings.Join(c.config.AllowHeaders, ", "))
-	c.next(ctx)
+	rw.Header().Add("Access-Control-Allow-Methods", strings.Join(c.config.AllowMethods, ", "))
+	rw.Header().Add("Access-Control-Allow-Headers", strings.Join(c.config.AllowHeaders, ", "))
+	c.next(rw, req)
 }
 
 // NewJsonBody Create a new logger middleware
