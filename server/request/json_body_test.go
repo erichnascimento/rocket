@@ -1,4 +1,4 @@
-package server
+package request
 
 import (
 	"net/http"
@@ -6,11 +6,11 @@ import (
 	"strings"
 )
 
-func TestDecode(t *testing.T) {
+func TestDecodeJSON(t *testing.T) {
 	body := strings.NewReader(`{"foo": "bar"}`)
 	req, _ := http.NewRequest(http.MethodPost, "foo_url", body)
 	var v map[string]interface{}
-	err := Decode(req, &v)
+	err := DecodeJSON(req, &v)
 	if err != nil {
 		t.Error(err)
 	}
