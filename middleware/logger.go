@@ -4,8 +4,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"net/http"
+
+	"github.com/dustin/go-humanize"
 	"github.com/erichnascimento/rocket/server/response"
 )
 
@@ -22,6 +23,8 @@ func (l *Logger) Mount(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (l *Logger) handle(rw http.ResponseWriter, req *http.Request) {
+	rw = response.WrapResponseWriter(rw)
+
 	l.start = time.Now()
 	l.next(rw, req)
 	duration := time.Since(l.start) / time.Millisecond
