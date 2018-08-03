@@ -1,19 +1,24 @@
 package response
 
 import (
-	"testing"
-	"net/http/httptest"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
-func TestEncodeJSON(t *testing.T) {
+func TestSendJSON(t *testing.T) {
 	rw := httptest.NewRecorder()
 	v := map[string]interface{}{
 		"foo": "bar",
 	}
-	err := EncodeJSON(rw, v)
+	err := SendJSON(rw, v, http.StatusOK)
 	if err != nil {
 		t.Error(err)
+	}
+
+	if expected, given := http.StatusOK, rw.Result().StatusCode; expected != given {
+		t.Errorf(`Invalid status code. Expected %d, given %d`, expected, given)
 	}
 
 	var o map[string]interface{}

@@ -2,8 +2,8 @@ package request
 
 import (
 	"net/http"
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestDecodeJSON(t *testing.T) {

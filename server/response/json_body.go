@@ -5,6 +5,9 @@ import (
 	"net/http"
 )
 
-func EncodeJSON(rw http.ResponseWriter, v interface{}) error {
+func SendJSON(rw http.ResponseWriter, v interface{}, statusCode int) error {
+	rw.Header().Add("Content-Type", "application/json")
+	rw.WriteHeader(statusCode)
+
 	return json.NewEncoder(rw).Encode(v)
 }
