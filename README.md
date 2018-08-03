@@ -1,5 +1,5 @@
-# Rocket (in development)
-A rest API server library focused in speed and simplicity
+# Rocket (WIP)
+A HTTP rest API server library focused on performance and simplicity
 
 ## Install
 ```sh
@@ -12,44 +12,62 @@ $ go get github.com/erichnascimento/rocket
 package main
 
 import (
-	"fmt"
+	"net/http"
+	"strconv"
 
-	"github.com/erichnascimento/rocket/middleware/logger"
-	"github.com/erichnascimento/rocket/middleware/router"
+	"log"
+
+	"github.com/erichnascimento/rocket/middleware"
 	"github.com/erichnascimento/rocket/server"
+	"github.com/erichnascimento/rocket/server/response"
 )
 
 func main() {
-	s := server.New("0.0.0.0:3000")
+	s := server.NewServer()
 
-	// Add logger middleware
-	s.Use(logger.NewLogger())
+	// Use a Logger middleware for logging
+	s.Use(middleware.NewLogger())
 
-	// Add router middleware prefixed for "/myapi/v2"
-	r := router.NewRouter("/myapi/v2")
+	// Create a new router middleware for API `my_api`, version 2
+	r := middleware.NewRouter("/my_api/v2")
+	r.Get(`/users`, listUsersHandler)
+	r.Get(`/users/:id`, getUserHandler)
 
-	// add a simple route
-	r.Add("GET", "/test", func(ctx *router.Context) {
-		fmt.Fprintf(ctx, "Welcome!\n")
-	})
-
-	// add a route
-	r.Add("GET", "/users", func(ctx *router.Context) {
-		fmt.Fprintf(ctx, "List users!\n")
-	})
-
-	// add route with param
-	r.Add("GET", "/users/:userId", func(ctx *router.Context) {
-		fmt.Fprintf(ctx, "Listing user %s!\n", ctx.GetParam("userId"))
-	})
-
-	// add route and subroute
-	r.Add("GET", "/users/:userId/sales/:saleId", func(ctx *router.Context) {
-		fmt.Fprintf(ctx, "Listing user %s and sale %s!\n", ctx.GetParam("userId"), ctx.GetParam("saleId"))
-	})
-
+	// use the router
 	s.Use(r)
-	s.Serve()
+
+	// Start listening and serving
+	err := s.ListenAndServe(":2000")
+	log.Print(err)
+}
+
+func listUsersHandler(rw http.ResponseWriter, _ *http.Request) {
+	response.SendJSON(rw, users, http.StatusOK)
+}
+
+func getUserHandler(rw http.ResponseWriter, req *http.Request) {
+	pID := req.Context().Value(`id`).(string)
+	id, err := strconv.Atoi(pID)
+	if err != nil {
+		response.SendJSON(rw, "id arguments should be a integer", http.StatusBadRequest)
+		return
+	}
+	if id < 1 || id > 2 {
+		response.SendJSON(rw, "User not found", http.StatusNotFound)
+		return
+	}
+
+	response.SendJSON(rw, users[id-1], http.StatusOK)
+}
+
+var users = []user{
+	user{1, "Jacob"},
+	user{2, "Dudu"},
+}
+
+type user struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 
@@ -59,25 +77,36 @@ func main() {
 
 ```sh
 $ go run examples/simple-server.go
-2015/09/08 16:10:44 GET /myapi/v2/test 200 0ms - 9B
-2015/09/08 16:10:54 GET /myapi/v2/users 200 0ms - 12B
-2015/09/08 16:11:00 GET /myapi/v2/users/123 200 0ms - 18B
-2015/09/08 16:11:08 GET /myapi/v2/users/123/sales/456 200 0ms - 31B
+2018/08/02 22:41:12 GET /my_api/v2/users 200 0ms - 49 B
+2018/08/02 22:42:25 GET /my_api/v2/users/1 200 0ms - 24 B
+2018/08/02 22:44:06 GET /my_api/v2/users/3 404 0ms - 17 B
 
 ```
 ## Perform requests
 
 ```sh
-$ curl http://127.0.0.1:3000/myapi/v2/test
-Welcome!
+$ curl -XGET "http://localhost:2000/my_api/v2/users" -v
+< HTTP/1.1 200 OK
+< Content-Type: application/json
+< Date: Fri, 03 Aug 2018 01:41:12 GMT
+< Content-Length: 49
+<
+[{"id":1,"name":"Jacob"},{"id":2,"name":"Dudu"}]
 
-$ curl http://127.0.0.1:3000/myapi/v2/users
-List users!
+$ curl -XGET "http://localhost:2000/my_api/v2/users/1" -v
+< HTTP/1.1 200 OK
+< Content-Type: application/json
+< Date: Fri, 03 Aug 2018 01:42:25 GMT
+< Content-Length: 24
+<
+{"id":1,"name":"Jacob"}
 
-$ curl http://127.0.0.1:3000/myapi/v2/users/123
-Listing user 123!
-
-$ curl http://127.0.0.1:3000/myapi/v2/users/123/sales/456
-Listing user 123 and sale 456!
+$ curl -XGET "http://localhost:2000/my_api/v2/users/3" -v
+< HTTP/1.1 404 Not Found
+< Content-Type: application/json
+< Date: Fri, 03 Aug 2018 01:44:06 GMT
+< Content-Length: 17
+<
+"User not found"
 
 ```
