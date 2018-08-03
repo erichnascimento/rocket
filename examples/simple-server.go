@@ -2,15 +2,17 @@ package main
 
 import (
 	"net/http"
-	"fmt"
+	"strconv"
 
-	"github.com/erichnascimento/rocket/server"
-	"github.com/erichnascimento/rocket/middleware"
 	"log"
+
+	"github.com/erichnascimento/rocket/middleware"
+	"github.com/erichnascimento/rocket/server"
+	"github.com/erichnascimento/rocket/server/response"
 )
 
 func main() {
-	s := server.NewRocket()
+	s := server.NewServer()
 
 	// Use a Logger middleware for logging
 	s.Use(middleware.NewLogger())
@@ -28,21 +30,31 @@ func main() {
 	log.Print(err)
 }
 
-var users = map[interface{}]string{
-	`1`:"Jacob",
-	`2`:"Dudu",
-}
-
 func listUsersHandler(rw http.ResponseWriter, _ *http.Request) {
-	fmt.Fprint(rw, `[`)
-	for id, name := range users {
-		fmt.Fprintf(rw, `{"id": %d, "name": "%s"},`, id, name)
-	}
-	fmt.Fprint(rw, `]`)
+	response.SendJSON(rw, users, http.StatusOK)
 }
 
 func getUserHandler(rw http.ResponseWriter, req *http.Request) {
-	id := req.Context().Value(`id`)
-	user := users[id]
-	fmt.Fprint(rw, user)
+	pID := req.Context().Value(`id`).(string)
+	id, err := strconv.Atoi(pID)
+	if err != nil {
+		response.SendJSON(rw, "id arguments should be a integer", http.StatusBadRequest)
+		return
+	}
+	if id < 1 || id > 2 {
+		response.SendJSON(rw, "User not found", http.StatusNotFound)
+		return
+	}
+
+	response.SendJSON(rw, users[id-1], http.StatusOK)
+}
+
+var users = []user{
+	user{1, "Jacob"},
+	user{2, "Dudu"},
+}
+
+type user struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
