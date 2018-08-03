@@ -1,11 +1,13 @@
 package response
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type responseWriter struct {
 	http.ResponseWriter
 	written int
-	status int
+	status  int
 }
 
 // Override in order to capture bytes written
@@ -23,11 +25,7 @@ func (rw *responseWriter) WriteHeader(code int) {
 }
 
 func WrapResponseWriter(rw http.ResponseWriter) http.ResponseWriter {
-	result := &responseWriter{ ResponseWriter: rw}
-	result.status = http.StatusOK
-	rw.WriteHeader(result.status)
-
-	return result
+	return &responseWriter{ResponseWriter: rw}
 }
 
 func GetContentLength(rw http.ResponseWriter) int {
