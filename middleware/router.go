@@ -49,8 +49,6 @@ func (r *Router) handle(rw http.ResponseWriter, req *http.Request) {
 			break
 		}
 	}
-
-	r.next(rw, req)
 }
 
 func (r *Router) Add(method, path string, handlers...http.HandlerFunc) *Router {
